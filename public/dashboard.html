@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI GitHub PR Reviewer - Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            font-size: 1.5rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #667eea;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section h2 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+        
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c53030;
+        }
+        
+        .repo-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .repo-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .repo-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .repo-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .repo-description {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .repo-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #a0aec0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .pr-section {
+            display: none;
+        }
+        
+        .pr-list {
+            margin-top: 1rem;
+        }
+        
+        .pr-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .pr-item:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        
+        .pr-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .pr-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        
+        .analyze-btn {
+            margin-top: 1rem;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 AI GitHub PR Reviewer</h1>
+        <div class="user-info">
+            <img id="userAvatar" class="user-avatar" src="" alt="User Avatar">
+            <span id="userName">Loading...</span>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Repository Selection Section -->
+        <div class="section" id="repoSection">
+            <h2>📁 Select Repository</h2>
+            <p>Choose a repository to analyze pull requests:</p>
+            <div id="repoList" class="repo-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading your repositories...
+                </div>
+            </div>
+        </div>
+
+        <!-- Pull Request Selection Section -->
+        <div class="section pr-section" id="prSection">
+            <h2>🔄 Select Pull Request</h2>
+            <p>Choose a pull request to analyze:</p>
+            <button class="btn btn-secondary" onclick="backToRepos()">← Back to Repositories</button>
+            <div id="prList" class="pr-list"></div>
+        </div>
+
+        <!-- Analysis Section -->
+        <div class="section pr-section" id="analysisSection">
+            <h2>🧠 AI Analysis</h2>
+            <div id="analysisContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let selectedRepo = null;
+        let selectedPR = null;
+
+        // Initialize dashboard
+        async function init() {
+            try {
+                // Get current user
+                const userResponse = await fetch('/api/user');
+                if (!userResponse.ok) {
+                    window.location.href = '/';
+                    return;
+                }
+                
+                currentUser = await userResponse.json();
+                document.getElementById('userName').textContent = currentUser.user.name || currentUser.user.login;
+                document.getElementById('userAvatar').src = currentUser.user.avatar_url;
+                
+                // Load repositories
+                await loadRepositories();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                window.location.href = '/';
+            }
+        }
+
+        // Load user repositories
+        async function loadRepositories() {
+            try {
+                const response = await fetch('/api/repos');
+                const data = await response.json();
+                
+                const repoList = document.getElementById('repoList');
+                
+                if (data.success && data.repos.length > 0) {
+                    repoList.innerHTML = data.repos.map(repo => `
+                        <div class="repo-card" onclick="selectRepository('${repo.owner.login}', '${repo.name}')">
+                            <div class="repo-name">${repo.full_name}</div>
+                            <div class="repo-description">${repo.description || 'No description'}</div>
+                            <div class="repo-stats">
+                                <span>⭐ ${repo.stargazers_count}</span>
+                                <span>🍴 ${repo.forks_count}</span>
+                                <span>📝 ${repo.language || 'N/A'}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    repoList.innerHTML = '<p>No repositories found or accessible.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading repositories:', error);
+                document.getElementById('repoList').innerHTML = '<p>Error loading repositories.</p>';
+            }
+        }
+
+        // Select a repository and load its PRs
+        async function selectRepository(owner, repo) {
+            selectedRepo = { owner, repo };
+            
+            try {
+                document.getElementById('repoSection').style.display = 'none';
+                document.getElementById('prSection').style.display = 'block';
+                
+                const response = await fetch(`/api/repos/${owner}/${repo}/pulls`);
+                const data = await response.json();
+                
+                const prList = document.getElementById('prList');
+                
+                if (data.success && data.pulls.length > 0) {
+                    prList.innerHTML = data.pulls.map(pr => `
+                        <div class="pr-item" onclick="selectPR(${pr.number})">
+                            <div class="pr-title">#${pr.number}: ${pr.title}</div>
+                            <div class="pr-meta">
+                                <span>👤 ${pr.user.login}</span>
+                                <span>📅 ${new Date(pr.created_at).toLocaleDateString()}</span>
+                                <span>🔄 ${pr.state}</span>
+                            </div>
+                            <button class="btn btn-primary analyze-btn" onclick="event.stopPropagation(); analyzePR(${pr.number})">
+                                🧠 Analyze with AI
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    prList.innerHTML = '<p>No open pull requests found in this repository.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading pull requests:', error);
+                document.getElementById('prList').innerHTML = '<p>Error loading pull requests.</p>';
+            }
+        }
+
+        // Analyze a pull request
+        async function analyzePR(prNumber) {
+            selectedPR = prNumber;
+            
+            try {
+                document.getElementById('analysisSection').style.display = 'block';
+                const analysisContent = document.getElementById('analysisContent');
+                
+                analysisContent.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Analyzing PR #${prNumber} with AI... This may take a moment.
+                    </div>
+                `;
+                
+                const response = await fetch('/api/analyze-pr', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        owner: selectedRepo.owner,
+                        repo: selectedRepo.repo,
+                        prNumber: prNumber
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    analysisContent.innerHTML = `
+                        <div style="background: #f0fff4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <h3>✅ Analysis Complete!</h3>
+                            <p>AI analysis has been generated for PR #${prNumber}</p>
+                        </div>
+                        <div style="background: #f7fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h4>🤖 AI Review:</h4>
+                            <pre style="white-space: pre-wrap; font-family: inherit; margin-top: 0.5rem;">${data.analysis}</pre>
+                        </div>
+                        <button class="btn btn-primary" onclick="postReview()" style="margin-top: 1rem;">
+                            📝 Post Comment to GitHub
+                        </button>
+                    `;
+                } else {
+                    analysisContent.innerHTML = `
+                        <div style="background: #fed7d7; padding: 1rem; border-radius: 8px;">
+                            <h3>❌ Analysis Failed</h3>
+                            <p>Error: ${data.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error analyzing PR:', error);
+                document.getElementById('analysisContent').innerHTML = `
+                    <div style="background: #fed7d7; padding: 1rem; border-radius: 8px;">
+                        <h3>❌ Analysis Failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Post review comment to GitHub
+        async function postReview() {
+            try {
+                const response = await fetch('/api/post-review', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        owner: selectedRepo.owner,
+                        repo: selectedRepo.repo,
+                        prNumber: selectedPR,
+                        body: document.querySelector('#analysisContent pre').textContent
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Review comment posted successfully to GitHub!');
+                } else {
+                    alert('❌ Failed to post comment: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error posting review:', error);
+                alert('❌ Error posting review: ' + error.message);
+            }
+        }
+
+        // Navigation functions
+        function backToRepos() {
+            document.getElementById('prSection').style.display = 'none';
+            document.getElementById('analysisSection').style.display = 'none';
+            document.getElementById('repoSection').style.display = 'block';
+        }
+
+        function selectPR(prNumber) {
+            selectedPR = prNumber;
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                await fetch('/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/';
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

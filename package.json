@@ -1,0 +1,37 @@
+{
+  "name": "ai-github-pr-reviewer",
+  "version": "1.0.0",
+  "description": "AI-powered GitHub Pull Request reviewer using local LLM (Ollama)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node start.js",
+    "dev": "nodemon server.js",
+    "server": "node server.js",
+    "cli": "node cli.js",
+    "setup": "node setup.js",
+    "test": "node test.js",
+    "health": "node test.js"
+  },
+  "keywords": [
+    "github",
+    "ai",
+    "pr-review",
+    "ollama",
+    "llm",
+    "code-review"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "body-parser": "^2.2.0",
+    "commander": "^14.0.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "inquirer": "^8.2.6",
+    "langchain": "^1.0.2",
+    "open": "^10.2.0"
+  }
+}

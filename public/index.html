@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI GitHub PR Reviewer</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #718096;
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .feature {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature h3 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .feature p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+        }
+        
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            color: #22543d;
+        }
+        
+        .status.loading {
+            background: #fef5e7;
+            border-color: #f6e05e;
+            color: #744210;
+        }
+        
+        .status.error {
+            background: #fed7d7;
+            border-color: #feb2b2;
+            color: #742a2a;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🤖</div>
+        <h1>AI GitHub PR Reviewer</h1>
+        <p class="subtitle">
+            Automated code review powered by AI. Analyze pull requests, get intelligent feedback, and improve code quality with ease.
+        </p>
+        
+        <div class="features">
+            <div class="feature">
+                <h3>🔍 Smart Analysis</h3>
+                <p>AI-powered code review using Ollama LLM models</p>
+            </div>
+            <div class="feature">
+                <h3>🔗 GitHub Integration</h3>
+                <p>Seamless integration with GitHub repositories and PRs</p>
+            </div>
+            <div class="feature">
+                <h3>💬 Auto Comments</h3>
+                <p>Automatically post review comments on pull requests</p>
+            </div>
+            <div class="feature">
+                <h3>⚡ Fast & Local</h3>
+                <p>Local AI processing with no data sent to external services</p>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <a href="/auth/login" class="btn btn-primary">
+                🔐 Login with GitHub
+            </a>
+            <a href="/health" class="btn btn-secondary">
+                ❤️ Health Check
+            </a>
+        </div>
+        
+        <div id="status" class="status" style="display: none;">
+            <strong>Status:</strong> <span id="status-text">Checking...</span>
+        </div>
+    </div>
+
+    <script>
+        // Check server status on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('status-text');
+            
+            try {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'status loading';
+                statusText.textContent = 'Checking server status...';
+                
+                const healthResponse = await fetch('/health');
+                const healthData = await healthResponse.json();
+                
+                const ollamaResponse = await fetch('/api/ollama/status');
+                const ollamaData = await ollamaResponse.json();
+                
+                statusDiv.className = 'status';
+                statusText.innerHTML = `
+                    Server: ✅ ${healthData.status} | 
+                    Ollama: ${ollamaData.running ? '✅ Connected' : '❌ Disconnected'} | 
+                    Model: ${ollamaData.modelAvailable ? '✅ ' + (ollamaData.availableModels[0] || 'gemma:2b') : '❌ Not available'}
+                `;
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusText.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
