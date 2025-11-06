@@ -374,11 +374,12 @@
                     analysisContent.innerHTML = `
                         <div style="background: #f0fff4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                             <h3>✅ Analysis Complete!</h3>
-                            <p>AI analysis has been generated for PR #${prNumber}</p>
+                            <p>AI analysis has been generated for PR #${prNumber} using ${data.analysis.model}</p>
+                            <small>Files changed: ${data.analysis.pr.filesChanged} | Method: ${data.analysis.method}</small>
                         </div>
                         <div style="background: #f7fafc; padding: 1rem; border-radius: 8px; border-left: 4px solid #667eea;">
                             <h4>🤖 AI Review:</h4>
-                            <pre style="white-space: pre-wrap; font-family: inherit; margin-top: 0.5rem;">${data.analysis}</pre>
+                            <pre style="white-space: pre-wrap; font-family: inherit; margin-top: 0.5rem;">${data.analysis.review}</pre>
                         </div>
                         <button class="btn btn-primary" onclick="postReview()" style="margin-top: 1rem;">
                             📝 Post Comment to GitHub
@@ -406,6 +407,8 @@
         // Post review comment to GitHub
         async function postReview() {
             try {
+                const reviewText = document.querySelector('#analysisContent pre').textContent;
+                
                 const response = await fetch('/api/post-review', {
                     method: 'POST',
                     headers: {
@@ -415,7 +418,7 @@
                         owner: selectedRepo.owner,
                         repo: selectedRepo.repo,
                         prNumber: selectedPR,
-                        body: document.querySelector('#analysisContent pre').textContent
+                        body: reviewText
                     })
                 });
                 

@@ -6,11 +6,17 @@ A comprehensive local AI tool that connects to your GitHub account, fetches open
 
 ## ✨ New Features & Recent Updates
 
-### 🌐 **Complete Web Dashboard (NEW!)**
+### 🐛 **Latest Bug Fix (November 6, 2025)**
+- **FIXED: AI Review Display Issue** - Resolved "[object Object]" display problem in dashboard
+- **Enhanced API Response Handling** - Proper display of structured AI analysis results
+- **Improved Error Messages** - Better user feedback for connection and analysis issues
+- **Updated Documentation** - Added troubleshooting section for common issues
+
+### 🌐 **Complete Web Dashboard**
 - **Beautiful Modern Interface** - Gradient design with responsive layout
 - **Repository Browser** - Grid view with stars, forks, and language stats
 - **Pull Request Manager** - Browse and select PRs with metadata
-- **Real-time AI Analysis** - Live status updates and progress indicators
+- **Real-time AI Analysis** - Live status updates and progress indicators with proper result display
 - **GitHub Integration** - Direct comment posting to pull requests
 - **User Profile** - Avatar, authentication status, and session management
 
@@ -334,49 +340,66 @@ The code is well-structured but needs security improvements before merging.
 
 ### Common Issues
 
-1. **"Server not responding" / Connection Refused**
+1. **"[object Object]" displayed instead of AI review (FIXED!)**
+   ```
+   # Issue: Dashboard shows "[object Object]" when displaying AI analysis
+   # Cause: Frontend was displaying entire response object instead of review text
+   # Solution: Fixed in dashboard.html to properly extract data.analysis.review
+   # Status: ✅ RESOLVED in latest version
+   ```
+
+2. **"Server not responding" / Connection Refused**
    ```bash
-   # Make sure server is running
+   # Make sure server is running in correct directory
+   cd D:\frontend-3\ai-github-pr-reviewer
    npm start
    # Check if port 5000 is available
    netstat -an | grep 5000
    ```
 
-2. **"Ollama is not running"**
+3. **"Failed to fetch" errors in dashboard**
+   ```bash
+   # Ensure server is running and accessible
+   curl http://localhost:5000/health
+   # If connection refused, restart server:
+   npm start
+   ```
+
+4. **"Ollama is not running"**
    ```bash
    ollama serve
    # Verify Ollama is accessible
    curl http://localhost:11434/api/version
    ```
 
-3. **"Model not available"**
+5. **"Model not available"**
    ```bash
    ollama pull gemma:2b
    # Check available models
    ollama list
    ```
 
-4. **"Authentication required" / OAuth Issues**
+6. **"Authentication required" / OAuth Issues**
    - Visit `/auth/login` to re-authenticate
    - Check GitHub OAuth app callback URL: `http://localhost:5000/auth/github/callback`
    - Verify OAuth app has proper repository permissions
    - Clear browser cookies and try again
 
-5. **"No repositories found"**
+7. **"No repositories found"**
    - Ensure GitHub OAuth scope includes `repo` access
    - Check if user has accessible repositories
    - Verify GitHub token permissions
 
-6. **"No pull requests found"**
+8. **"No pull requests found"**
    - Repository may not have open pull requests
    - Create a test PR for demonstration
    - Check if PRs are in "open" state (not draft or closed)
 
-7. **"Missing required parameters" when posting comments**
+9. **"Missing required parameters" when posting comments**
    - Fixed in latest version - ensure you have updated code
    - Check request body includes `owner`, `repo`, `prNumber`, and `body`
 
-8. **"Rate limit exceeded"**
+10. **"Rate limit exceeded"**
    - GitHub API has rate limits (5000 requests/hour for authenticated users)
    - Wait and try again later
    - Check rate limit status: `curl -H "Authorization: token YOUR_TOKEN" https://api.github.com/rate_limit`
